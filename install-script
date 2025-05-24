@@ -1,0 +1,90 @@
+#!/bin/sh
+clear
+mkdir ~/.config
+
+#touchpad
+mkdir -p /etc/X11/xorg.conf.d/
+touch /etc/X11/xorg.conf.d/30-touchpad.conf
+echo '
+Section "InputClass"
+    Identifier "touchpad"
+    Driver "libinput"
+    MatchIsTouchpad "on"
+    Option "Tapping" "on"
+    Option "TapButton1" "1"
+    Option "TabButton2" "2"
+    Option "TabButton3" "3"
+    Option "NaturalScrolling" "true"
+EndSection
+' >> /etc/X11/xorg.conf.d/30-touchpad.conf
+
+#.xinitrc
+echo '
+#!/bin/sh
+
+turnstile &
+setxkbmap de &
+feh --bg-fill ~/Pictures/Wallpapers/flowers.png &
+slstatus &
+pulseaudio &
+picom &
+exec dbus-launch --sh-syntax --exit-with-session dwm
+' >> ~/.xinitrc
+
+#bash-prompt
+echo '
+PS1='\[\e[38;5;183m\]\u\[\e[38;5;176m\]@\[\e[38;5;144m\]\H\[\e[38;5;189m\]\w\n\\$\[\e[0m\]'
+' >> ~/.bashrc
+
+#startx
+touch temp
+echo '
+#
+# ~/.bash_profile
+#
+if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
+  exec startx
+fi
+[[ -f ~/.bashrc ]] && . ~/.bashrc
+' >> temp
+cat temp > ~/.bash_profile
+rm -rf temp
+
+#installing stuff
+xbps-install libXft-devel libX11-devel feh harfbuzz-devel libXext-devel libXrender-devel libXinerama-devel gd-devel base-devel xorg xinit turnstile picom pulseaudio dbus alsa-utils flameshot noto-fonts-emoji noto-fonts-ttf noto-fonts-cjk
+
+#cursor
+tar xvzf adwaita-cursors.tar.gz
+mkdir -p ~/.icons/default
+mv adwaita-cursors/Adwaita/cursors ~/.icons/default
+touch ~/.Xresources
+echo '
+Xcursor.theme: default
+Xcursor.size: 42
+' >> ~/.Xresources
+
+#wallpaper
+mkdir -p ~/Pictures/Wallpapers
+mv wallpaper/* ~/Pictures/Wallpapers
+
+#fonts
+unzip fonts/FiraCode.zip
+unzip fonts/RobotoMono.zip
+mv *.ttf /usr/share/fonts/
+
+#suckless
+cd suckless/dwm
+make clean install
+cd ..
+cd st
+make clean install
+cd ..
+cd slstatus
+make clean install
+cd ..
+cd dmenu
+make clean install
+cd
+
+#picom
+cp /etc/xdg/picom.conf ~/.config
